@@ -1,0 +1,40 @@
+/include/ "system-conf.dtsi"
+/ {
+
+	firmware{
+		optee {
+			compatible = "linaro,optee-tz";
+			method = "smc";
+		};
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		atf@0 {
+			reg = <0x0 0x1000 0x0 0x1f000>;
+			no-map;
+		};
+
+		optee@60000000 {
+			reg = <0x0 0x60000000 0x0 0x10000000>;
+			no-map;
+		};
+	};
+
+};
+
+
+
+&sdhci1 {
+	status = "okay";
+	no-1-8-v;
+	disable-wp;
+	//pinctrl-names = "default";
+	//pinctrl-0 = <&pinctrl_sdhci0_default>;
+	//xlnx,mio_bank = <0>;
+};
+
+

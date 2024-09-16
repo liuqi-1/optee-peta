@@ -1,0 +1,10 @@
+.vscode
+toolchains/
+out-br/
+arm-trusted-firmware/
+bootgen/
+buildroot/
+optee_client/
+optee_os/
+optee_test/
+optee_examples/
