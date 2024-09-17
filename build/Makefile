@@ -54,14 +54,7 @@ create: check
 	@#
 	@# Download python package dependencies from meta-core layer using gatesgarth branch as there were not available for zeus
 	@mkdir -p ${PYTHON_PATH}
-	@curl -s http://cgit.openembedded.org/openembedded-core/plain/meta/recipes-devtools/python/python3-pycryptodome_3.9.8.bb?h=gatesgarth \
-	-o ${PYTHON_PATH}/python3-pycryptodome_3.9.8.bb
-	@curl -s http://cgit.openembedded.org/openembedded-core/plain/meta/recipes-devtools/python/python3-pycryptodomex_3.9.8.bb?h=gatesgarth \
-	 -o ${PYTHON_PATH}/python3-pycryptodomex_3.9.8.bb
-	@curl -s http://cgit.openembedded.org/openembedded-core/plain/meta/recipes-devtools/python/python3-pyelftools_0.26.bb?h=gatesgarth  \
-	-o ${PYTHON_PATH}/python3-pyelftools_0.26.bb
-	@curl -s http://cgit.openembedded.org/openembedded-core/plain/meta/recipes-devtools/python/python-pycryptodome.inc?h=gatesgarth \
-	-o ${PYTHON_PATH}/python-pycryptodome.inc
+	@cp zynqmp/python/* ${PYTHON_PATH}/
 	@#
 	@# Add packages to the image
 	@echo IMAGE_INSTALL_append = \" optee-os optee-client optee-test\" >> ${PETAL_PATH}/project-spec/meta-user/conf/petalinuxbsp.conf
@@ -75,13 +68,21 @@ create: check
 	@# Replace exisiting user configued dts file to add optee node
 	@cp zynqmp/device-tree/system-user.dtsi ${PETAL_PATH}/project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
 
-build: 
+build: check
 	@petalinux-build -p $(PETAL_PATH)
 	
-package: check build
+package: check
 	@petalinux-package --boot --pmufw --fpga --u-boot --add ${PETAL_PATH}/images/linux/tee_raw.bin --cpu a53-0 \
 	    --file-attribute "load=0x60000000, startup=0x60000000, exception_level=el-1, trustzone" --force -p ${PETAL_PATH}
 	@cp $(PETAL_PATH)/images/linux/image.ub ./images/
 	@cp $(PETAL_PATH)/images/linux/boot.scr ./images/
-	@cp $(PETAL_PATH)/images/linux/BOOT.BIN ./images/
+	@cp $(PETAL_PATH)/images/linux/BOOT.bin ./images/
 	@cp $(PETAL_PATH)/images/linux/rootfs.tar.gz ./images/
+
+sysroot:
+	@petalinux-build --sdk	-p ${PETAL_PATH}
+	@petalinux-package --sysroot -p ${PETAL_PATH}
+	
+clear:
+	@petalinux-build -x distclean -p ${PETAL_PATH}
+	# @petalinux-build -x mrproper -p ${PETAL_PATH}
