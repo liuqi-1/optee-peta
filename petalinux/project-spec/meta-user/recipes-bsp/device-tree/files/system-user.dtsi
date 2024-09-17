@@ -36,4 +36,3 @@
 	//pinctrl-0 = <&pinctrl_sdhci0_default>;
 	//xlnx,mio_bank = <0>;
 };
-
