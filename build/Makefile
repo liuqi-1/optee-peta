@@ -1,85 +1,89 @@
-################################################################################
-# Following variables defines how the NS_USER (Non Secure User - Client
-# Application), NS_KERNEL (Non Secure Kernel), S_KERNEL (Secure Kernel) and
-# S_USER (Secure User - TA) are compiled
-################################################################################
-override COMPILE_NS_USER   := 64
-override COMPILE_NS_KERNEL := 64
-override COMPILE_S_USER    := 64
-override COMPILE_S_KERNEL  := 64
+PLATFORM		?= zcu102
+PETAL_PATH		?= ../petalinux2
+OPTEE_VER		?= latest
+XSA_FILE		?= axu3eg.xsa
 
-PLATFORM := zynqmp-zcu102
-OPTEE_OS_PLATFORM = $(PLATFORM)
+PYTHON_PATH	?= ${PETAL_PATH}/project-spec/meta-user/recipes-devtools/python
 
-DTS_zynqmp-zcu102 = zynqmp-zcu102-rev1.0
-DTS_zynqmp-zcu104 = zynqmp-zcu104-revC
-DTS_zynqmp-zcu106 = zynqmp-zcu106-revA
-DTS_zynqmp-ultra96 = avnet-ultra96-rev1
-U-BOOT_DTS = $(DTS_$(PLATFORM))
+define set_cfg
+	@sed -i 's/$(1)=.*/$(1)=$(2)/' $(3)
+endef
 
-################################################################################
-# Paths to git projects and various binaries
-################################################################################
-TF_A_PATH		?= $(ROOT)/arm-trusted-firmware
-U-BOOT_PATH		?= $(ROOT)/u-boot-xlnx
-BOOTGEN_PATH		?= $(ROOT)/bootgen
-LINUX_PATH		?= $(ROOT)/linux-xlnx
+define set_optee_version
+	@if [ "$(1)" != "latest" ]; then \
+		echo 'OPTEE_VERSION ?= "$(1)"' > $(2); \
+		echo 'SRCREV ?= "$(1)"' >> $(2); \
+	else \
+		echo 'OPTEE_VERSION ?= "latest"' > $(2); \
+		echo 'SRCREV ?= "$${AUTOREV}"' >> $(2); \
+	fi
+endef
 
-include common.mk
+ifeq ($(PLATFORM),ultra96-reva)
+	ZYNQMP_CONSOLE=cadence1
+else
+	ZYNQMP_CONSOLE=cadence0
+endif
 
-################################################################################
-# Targets
-################################################################################
-include toolchain.mk
+.PHONY: check
+check:
+ifndef PETALINUX_VER
+	$(error You have to source Petalinux settings)
+endif
+ifneq ($(PETALINUX_VER),2020.2)
+	$(error This makefile only support Petalinux 2020.2)
+endif
 
-################################################################################
-# ARM Trusted Firmware
-################################################################################
-TF_A_EXPORTS = CROSS_COMPILE="$(CCACHE)$(AARCH64_CROSS_COMPILE)"
-TF_A_FLAGS  = PLAT=zynqmp RESET_TO_BL31=1 NEED_BL32=yes SPD=opteed LOG_LEVEL=LOG_LEVEL_INFO
+create: check
+	@
+	@# Create TMP directory to avoid issues with .. in the path name
+	@mkdir -p /tmp/petalinux-optee-${PLATFORM}
+	@petalinux-create -n $(PETAL_PATH) -t project --template zynqMP --tmpdir /tmp/petalinux-optee-${PLATFORM}
+	@cp zynqmp/xsa/$(XSA_FILE)  $(PETAL_PATH)/
+	@cd ../petalinux && petalinux-config --get-hw-description=$(XSA_FILE)
+	@#
+	@# Append the ATF recipe to include opteed as SPD
+	@mkdir -p ${PETAL_PATH}/project-spec/meta-user/recipes-bsp/arm-trusted-firmware
+	@cp zynqmp/arm-trusted-firmware/*.bbappend ${PETAL_PATH}/project-spec/meta-user/recipes-bsp/arm-trusted-firmware/.
+	@#
+	@# Download optee package  recipes from meta-arm layer using gatesgarth branch as there were not available for zeus
+	@cp -r zynqmp/meta-arm-3.2/meta-arm/recipes-security  ${PETAL_PATH}/project-spec/meta-user/
+	@#
+	@# Copy the bbapend files for our target
+	@cp zynqmp/optee/* ${PETAL_PATH}/project-spec/meta-user/recipes-security/optee/
+	@#
+	@# Download python package dependencies from meta-core layer using gatesgarth branch as there were not available for zeus
+	@mkdir -p ${PYTHON_PATH}
+	@cp zynqmp/python/* ${PYTHON_PATH}/
+	@#
+	@# Add packages to the image
+	@echo IMAGE_INSTALL_append = \" optee-os optee-client optee-test\" >> ${PETAL_PATH}/project-spec/meta-user/conf/petalinuxbsp.conf
+	@#
+	@# Add optee kernel options to the exisiting kernel append recipe
+	@mkdir -p ${PETAL_PATH}/project-spec/meta-user/recipes-kernel/linux
+	@echo FILESEXTRAPATHS_prepend := \"$$\{THISDIR\}/linux-xlnx:\" >> ${PETAL_PATH}/project-spec/meta-user/recipes-kernel/linux/linux-xlnx_%.bbappend
+	@echo SRC_URI_append += \"file://kernel_optee.cfg\" >> ${PETAL_PATH}/project-spec/meta-user/recipes-kernel/linux/linux-xlnx_%.bbappend
+	@mkdir -p ${PETAL_PATH}/project-spec/meta-user/recipes-kernel/linux/linux-xlnx
+	@cp zynqmp/kernel/kernel_optee.cfg ${PETAL_PATH}/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/kernel_optee.cfg
+	@#
+	@# Replace exisiting user configued dts file to add optee node
+	@cp zynqmp/device-tree/system-user.dtsi ${PETAL_PATH}/project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
 
+build: check
+	@petalinux-build -p $(PETAL_PATH)
+	
+package: check
+	@petalinux-package --boot --pmufw --u-boot --add ${PETAL_PATH}/images/linux/tee_raw.bin --cpu a53-0 \
+	    --file-attribute "load=0x60000000, startup=0x60000000, exception_level=el-1, trustzone" --force -p ${PETAL_PATH}
+	@cp $(PETAL_PATH)/images/linux/image.ub ./images/
+	@cp $(PETAL_PATH)/images/linux/boot.scr ./images/
+	@cp $(PETAL_PATH)/images/linux/BOOT.BIN ./images/
+	@cp $(PETAL_PATH)/images/linux/rootfs.tar.gz ./images/
 
-tfa:
-	$(TF_A_EXPORTS) $(MAKE) -C $(TF_A_PATH) $(TF_A_FLAGS) bl31
-
-tfa-clean:
-	$(TF_A_EXPORTS) $(MAKE) -C $(TF_A_PATH) $(TF_A_FLAGS) clean
-
-################################################################################
-# OP-TEE
-#################################################################################
-optee-os: optee-os-common
-	${OPTEE_OS_PATH}/scripts/gen_tee_bin.py --input ${OPTEE_OS_PATH}/out/arm/core/tee.elf --out_tee_raw_bin ${OPTEE_OS_PATH}/out/arm/core/tee_raw.bin
-
-optee-os-clean: optee-os-clean-common
-	rm -f ${OPTEE_OS_PATH}/out/arm/core/tee_raw.bin
-
-
-###############################################################################
-# Bouildroot
-###############################################################################
-BR2_TARGET_GENERIC_ISSUE="OP-TEE embedded distrib for $(PLATFORM)"
-BR2_TARGET_ROOTFS_EXT2=y
-BR2_PACKAGE_BUSYBOX_WATCHDOG=y
-BR2_TARGET_GENERIC_GETTY_PORT=ttyPS0
-
-# TF-A, Linux kernel, U-Boot and OP-TEE OS/Client/... are not built from their
-# related Buildroot native package.
-BR2_TARGET_ARM_TRUSTED_FIRMWARE=n
-BR2_LINUX_KERNEL=n
-BR2_TARGET_OPTEE_OS=n
-BR2_TARGET_UBOOT=n
-BR2_PACKAGE_OPTEE_CLIENT=n
-BR2_PACKAGE_OPTEE_TEST=n
-BR2_PACKAGE_OPTEE_EXAMPLES=n
-BR2_PACKAGE_OPTEE_BENCHMARK=n
-
-
-###############################################################################
-# Bootgen
-###############################################################################
-bootgen:
-	make -C $(BOOTGEN_PATH)
-
-bootgen-clean:
-	make -C $(BOOTGEN_PATH) clean
+sysroot:
+	@petalinux-build --sdk	-p ${PETAL_PATH}
+	@petalinux-package --sysroot -p ${PETAL_PATH}
+	
+clear:
+	@petalinux-build -x distclean -p ${PETAL_PATH}
+	# @petalinux-build -x mrproper -p ${PETAL_PATH}

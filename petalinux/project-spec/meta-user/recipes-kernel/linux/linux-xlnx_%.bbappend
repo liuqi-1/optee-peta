@@ -1,4 +1,3 @@
-FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS_prepend := "${THISDIR}/linux-xlnx:"
 
-SRC_URI:append = " file://bsp.cfg"
-KERNEL_FEATURES:append = " bsp.cfg"
+SRC_URI_append += "file://kernel_optee.cfg"

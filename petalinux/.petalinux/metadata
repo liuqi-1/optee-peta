@@ -1,5 +1,6 @@
-PETALINUX_VER=2023.2
+PETALINUX_VER=2020.2
 VALIDATE_HW_CHKSUM=1
-HARDWARE_PATH=/home/liuqi/Desktop/mpsoc_optee/petalinux/design_1_wrapper.xsa
-HDF_EXT=xsa
-YOCTO_SDK=0e8272633ed5009d6e138f15b1f9793d
+HARDWARE_PATH=/home/liuqi/Desktop/zynqmp-cluster/petalinux/axu3eg.xsa
+HARDWARE_CHECKSUM=3476c62f2e503a942f214e5090b015fd
+YOCTO_SDK=267ec34beec0964aff190e9bebb3cc43
+RFSCONFIG_CHKSUM=e08cef60e9e25fb8fc0e78e4388d7f4d
