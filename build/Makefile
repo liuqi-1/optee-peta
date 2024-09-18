@@ -1,5 +1,5 @@
 PLATFORM		?= zcu102
-PETAL_PATH		?= ../petalinux2
+PETAL_PATH		?= ../petalinux
 OPTEE_VER		?= latest
 XSA_FILE		?= axu3eg.xsa
 
