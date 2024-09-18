@@ -1,5 +1,5 @@
 PLATFORM		?= zcu102
-PETAL_PATH		?= ../petalinux
+PETAL_PATH		?= ../petalinux2
 OPTEE_VER		?= latest
 XSA_FILE		?= axu3eg.xsa
 
@@ -61,6 +61,7 @@ create: check
 	@#
 	@# Add optee kernel options to the exisiting kernel append recipe
 	@mkdir -p ${PETAL_PATH}/project-spec/meta-user/recipes-kernel/linux
+	@echo FILESEXTRAPATHS_prepend := \"$$\{THISDIR\}/linux-xlnx:\" >> ${PETAL_PATH}/project-spec/meta-user/recipes-kernel/linux/linux-xlnx_%.bbappend
 	@echo SRC_URI_append += \"file://kernel_optee.cfg\" >> ${PETAL_PATH}/project-spec/meta-user/recipes-kernel/linux/linux-xlnx_%.bbappend
 	@mkdir -p ${PETAL_PATH}/project-spec/meta-user/recipes-kernel/linux/linux-xlnx
 	@cp zynqmp/kernel/kernel_optee.cfg ${PETAL_PATH}/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/kernel_optee.cfg
@@ -72,11 +73,11 @@ build: check
 	@petalinux-build -p $(PETAL_PATH)
 	
 package: check
-	@petalinux-package --boot --pmufw --fpga --u-boot --add ${PETAL_PATH}/images/linux/tee_raw.bin --cpu a53-0 \
+	@petalinux-package --boot --pmufw --u-boot --add ${PETAL_PATH}/images/linux/tee_raw.bin --cpu a53-0 \
 	    --file-attribute "load=0x60000000, startup=0x60000000, exception_level=el-1, trustzone" --force -p ${PETAL_PATH}
 	@cp $(PETAL_PATH)/images/linux/image.ub ./images/
 	@cp $(PETAL_PATH)/images/linux/boot.scr ./images/
-	@cp $(PETAL_PATH)/images/linux/BOOT.bin ./images/
+	@cp $(PETAL_PATH)/images/linux/BOOT.BIN ./images/
 	@cp $(PETAL_PATH)/images/linux/rootfs.tar.gz ./images/
 
 sysroot:
