@@ -1,5 +1,5 @@
 PLATFORM		?= zcu102
-PETAL_PATH		?= ../petalinux
+PETAL_PATH		?= ./petalinux
 OPTEE_VER		?= latest
 XSA_FILE		?= axu3eg.xsa
 
@@ -39,22 +39,22 @@ create: check
 	@# Create TMP directory to avoid issues with .. in the path name
 	@mkdir -p /tmp/petalinux-optee-${PLATFORM}
 	@petalinux-create -n $(PETAL_PATH) -t project --template zynqMP --tmpdir /tmp/petalinux-optee-${PLATFORM}
-	@cp zynqmp/xsa/$(XSA_FILE)  $(PETAL_PATH)/
-	@cd ../petalinux && petalinux-config --get-hw-description=$(XSA_FILE)
+	@cp build/zynqmp/xsa/$(XSA_FILE)  $(PETAL_PATH)/
+	@cd ./petalinux && petalinux-config --get-hw-description=$(XSA_FILE)
 	@#
 	@# Append the ATF recipe to include opteed as SPD
 	@mkdir -p ${PETAL_PATH}/project-spec/meta-user/recipes-bsp/arm-trusted-firmware
-	@cp zynqmp/arm-trusted-firmware/*.bbappend ${PETAL_PATH}/project-spec/meta-user/recipes-bsp/arm-trusted-firmware/.
+	@cp build/zynqmp/arm-trusted-firmware/*.bbappend ${PETAL_PATH}/project-spec/meta-user/recipes-bsp/arm-trusted-firmware/.
 	@#
 	@# Download optee package  recipes from meta-arm layer using gatesgarth branch as there were not available for zeus
-	@cp -r zynqmp/meta-arm-3.2/meta-arm/recipes-security  ${PETAL_PATH}/project-spec/meta-user/
+	@cp -r build/zynqmp/meta-arm-3.2/meta-arm/recipes-security  ${PETAL_PATH}/project-spec/meta-user/
 	@#
 	@# Copy the bbapend files for our target
-	@cp zynqmp/optee/* ${PETAL_PATH}/project-spec/meta-user/recipes-security/optee/
+	@cp build/zynqmp/optee/* ${PETAL_PATH}/project-spec/meta-user/recipes-security/optee/
 	@#
 	@# Download python package dependencies from meta-core layer using gatesgarth branch as there were not available for zeus
 	@mkdir -p ${PYTHON_PATH}
-	@cp zynqmp/python/* ${PYTHON_PATH}/
+	@cp build/zynqmp/python/* ${PYTHON_PATH}/
 	@#
 	@# Add packages to the image
 	@echo IMAGE_INSTALL_append = \" optee-os optee-client optee-test\" >> ${PETAL_PATH}/project-spec/meta-user/conf/petalinuxbsp.conf
@@ -64,10 +64,10 @@ create: check
 	@echo FILESEXTRAPATHS_prepend := \"$$\{THISDIR\}/linux-xlnx:\" >> ${PETAL_PATH}/project-spec/meta-user/recipes-kernel/linux/linux-xlnx_%.bbappend
 	@echo SRC_URI_append += \"file://kernel_optee.cfg\" >> ${PETAL_PATH}/project-spec/meta-user/recipes-kernel/linux/linux-xlnx_%.bbappend
 	@mkdir -p ${PETAL_PATH}/project-spec/meta-user/recipes-kernel/linux/linux-xlnx
-	@cp zynqmp/kernel/kernel_optee.cfg ${PETAL_PATH}/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/kernel_optee.cfg
+	@cp build/zynqmp/kernel/kernel_optee.cfg ${PETAL_PATH}/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/kernel_optee.cfg
 	@#
 	@# Replace exisiting user configued dts file to add optee node
-	@cp zynqmp/device-tree/system-user.dtsi ${PETAL_PATH}/project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
+	@cp build/zynqmp/device-tree/system-user.dtsi ${PETAL_PATH}/project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
 
 build: check
 	@petalinux-build -p $(PETAL_PATH)
@@ -81,8 +81,8 @@ package: check
 	@cp $(PETAL_PATH)/images/linux/rootfs.tar.gz ./images/
 
 sysroot:
-	@petalinux-build --sdk	-p ${PETAL_PATH}
-	@petalinux-package --sysroot -p ${PETAL_PATH}
+	@cd petalinux && petalinux-build --sdk
+	@cd petalinux && petalinux-package --sysroot
 	
 clear:
 	@petalinux-build -x distclean -p ${PETAL_PATH}
