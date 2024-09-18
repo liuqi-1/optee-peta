@@ -1054,31 +1054,6 @@ set psu_clock_init_data {
 		# This register controls this reference clock
 		#(OFFSET, MASK, VALUE)      (0XFD1A0080, 0x00003F07U ,0x00000200U)  */
     mask_write 0XFD1A0080 0x00003F07 0x00000200
-		# Register : GPU_REF_CTRL @ 0XFD1A0084</p>
-
-		# 6 bit divider
-		# PSU_CRF_APB_GPU_REF_CTRL_DIVISOR0                                               0x2
-
-		# 000 = IOPLL_TO_FPD; 010 = VPLL; 011 = DPLL; (This signal may only be tog
-    # gled after 4 cycles of the old clock and 4 cycles of the new clock. This
-    #  is not usually an issue, but designers must be aware.)
-		# PSU_CRF_APB_GPU_REF_CTRL_SRCSEL                                                 0x3
-
-		# Clock active signal. Switch to 0 to disable the clock, which will stop c
-    # lock for GPU (and both Pixel Processors).
-		# PSU_CRF_APB_GPU_REF_CTRL_CLKACT                                                 0x1
-
-		# Clock active signal for Pixel Processor. Switch to 0 to disable the cloc
-    # k only to this Pixel Processor
-		# PSU_CRF_APB_GPU_REF_CTRL_PP0_CLKACT                                             0x1
-
-		# Clock active signal for Pixel Processor. Switch to 0 to disable the cloc
-    # k only to this Pixel Processor
-		# PSU_CRF_APB_GPU_REF_CTRL_PP1_CLKACT                                             0x1
-
-		# This register controls this reference clock
-		#(OFFSET, MASK, VALUE)      (0XFD1A0084, 0x07003F07U ,0x07000203U)  */
-    mask_write 0XFD1A0084 0x07003F07 0x07000203
 		# Register : GDMA_REF_CTRL @ 0XFD1A00B8</p>
 
 		# 6 bit divider
@@ -4799,11 +4774,11 @@ set psu_ddr_init_data {
 		# Register : GPR1 @ 0XFD0800C4</p>
 
 		# General Purpose Register 1
-		# PSU_DDR_PHY_GPR1_GPR1                                                           0xe5
+		# PSU_DDR_PHY_GPR1_GPR1                                                           0xe3
 
 		# General Purpose Register 1
-		#(OFFSET, MASK, VALUE)      (0XFD0800C4, 0xFFFFFFFFU ,0x000000E5U)  */
-    mask_write 0XFD0800C4 0xFFFFFFFF 0x000000E5
+		#(OFFSET, MASK, VALUE)      (0XFD0800C4, 0xFFFFFFFFU ,0x000000E3U)  */
+    mask_write 0XFD0800C4 0xFFFFFFFF 0x000000E3
 		# Register : DCR @ 0XFD080100</p>
 
 		# DDR4 Gear Down Timing.
@@ -6471,14 +6446,14 @@ set psu_ddr_init_data {
 		# PSU_DDR_PHY_DX0GCR4_RESERVED_7_6                                                0x0
 
 		# VREF Enable control for DQ IO (Single Ended) buffers of a byte lane.
-		# PSU_DDR_PHY_DX0GCR4_DXREFIEN                                                    0x1
+		# PSU_DDR_PHY_DX0GCR4_DXREFIEN                                                    0xf
 
 		# VRMON control for DQ IO (Single Ended) buffers of a byte lane.
 		# PSU_DDR_PHY_DX0GCR4_DXREFIMON                                                   0x0
 
 		# DATX8 n General Configuration Register 4
-		#(OFFSET, MASK, VALUE)      (0XFD080710, 0xFFFFFFFFU ,0x0E00B004U)  */
-    mask_write 0XFD080710 0xFFFFFFFF 0x0E00B004
+		#(OFFSET, MASK, VALUE)      (0XFD080710, 0xFFFFFFFFU ,0x0E00B03CU)  */
+    mask_write 0XFD080710 0xFFFFFFFF 0x0E00B03C
 		# Register : DX0GCR5 @ 0XFD080714</p>
 
 		# Reserved. Returns zeros on reads.
@@ -6724,14 +6699,14 @@ set psu_ddr_init_data {
 		# PSU_DDR_PHY_DX1GCR4_RESERVED_7_6                                                0x0
 
 		# VREF Enable control for DQ IO (Single Ended) buffers of a byte lane.
-		# PSU_DDR_PHY_DX1GCR4_DXREFIEN                                                    0x1
+		# PSU_DDR_PHY_DX1GCR4_DXREFIEN                                                    0xf
 
 		# VRMON control for DQ IO (Single Ended) buffers of a byte lane.
 		# PSU_DDR_PHY_DX1GCR4_DXREFIMON                                                   0x0
 
 		# DATX8 n General Configuration Register 4
-		#(OFFSET, MASK, VALUE)      (0XFD080810, 0xFFFFFFFFU ,0x0E00B004U)  */
-    mask_write 0XFD080810 0xFFFFFFFF 0x0E00B004
+		#(OFFSET, MASK, VALUE)      (0XFD080810, 0xFFFFFFFFU ,0x0E00B03CU)  */
+    mask_write 0XFD080810 0xFFFFFFFF 0x0E00B03C
 		# Register : DX1GCR5 @ 0XFD080814</p>
 
 		# Reserved. Returns zeros on reads.
@@ -13762,21 +13737,12 @@ set psu_peripherals_init_data {
 		# GDMA block level reset
 		# PSU_CRF_APB_RST_FPD_TOP_GDMA_RESET                                              0
 
-		# Pixel Processor (submodule of GPU) block level reset
-		# PSU_CRF_APB_RST_FPD_TOP_GPU_PP0_RESET                                           0
-
-		# Pixel Processor (submodule of GPU) block level reset
-		# PSU_CRF_APB_RST_FPD_TOP_GPU_PP1_RESET                                           0
-
-		# GPU block level reset
-		# PSU_CRF_APB_RST_FPD_TOP_GPU_RESET                                               0
-
 		# GT block level reset
 		# PSU_CRF_APB_RST_FPD_TOP_GT_RESET                                                0
 
 		# FPD Block level software controlled reset
-		#(OFFSET, MASK, VALUE)      (0XFD1A0100, 0x000F007CU ,0x00000000U)  */
-    mask_write 0XFD1A0100 0x000F007C 0x00000000
+		#(OFFSET, MASK, VALUE)      (0XFD1A0100, 0x000F0044U ,0x00000000U)  */
+    mask_write 0XFD1A0100 0x000F0044 0x00000000
 		# : RESET BLOCKS
 		# : TIMESTAMP
 		# Register : RST_LPD_IOU2 @ 0XFF5E0238</p>
@@ -14428,7 +14394,43 @@ set psu_post_config_data {
 
 set psu_peripherals_powerdwn_data {
 		# : POWER DOWN REQUEST INTERRUPT ENABLE
+		# Register : REQ_PWRDWN_INT_EN @ 0XFFD80218</p>
+
+		# Power-down Request Interrupt Enable for GPU PP0
+		# PSU_PMU_GLOBAL_REQ_PWRDWN_INT_EN_PP0                                            1
+
+		# Power-down Request Interrupt Enable for GPU PP1
+		# PSU_PMU_GLOBAL_REQ_PWRDWN_INT_EN_PP1                                            1
+
+		# Power-down Request Interrupt Enable for ACPU2
+		# PSU_PMU_GLOBAL_REQ_PWRDWN_INT_EN_ACPU2                                          1
+
+		# Power-down Request Interrupt Enable for ACPU3
+		# PSU_PMU_GLOBAL_REQ_PWRDWN_INT_EN_ACPU3                                          1
+
+		# Power-down Request Interrupt Enable Register. Writing a 1 to this locati
+    # on will unmask the Interrupt.
+		#(OFFSET, MASK, VALUE)      (0XFFD80218, 0x0000003CU ,0x0000003CU)  */
+    mask_write 0XFFD80218 0x0000003C 0x0000003C
 		# : POWER DOWN TRIGGER
+		# Register : REQ_PWRDWN_TRIG @ 0XFFD80220</p>
+
+		# Power-down Request Trigger for GPU PP0
+		# PSU_PMU_GLOBAL_REQ_PWRDWN_TRIG_PP0                                              1
+
+		# Power-down Request Trigger for GPU PP1
+		# PSU_PMU_GLOBAL_REQ_PWRDWN_TRIG_PP1                                              1
+
+		# Power-down Request Trigger for ACPU2
+		# PSU_PMU_GLOBAL_REQ_PWRDWN_TRIG_ACPU2                                            1
+
+		# Power-down Request Trigger for ACPU3
+		# PSU_PMU_GLOBAL_REQ_PWRDWN_TRIG_ACPU3                                            1
+
+		# Power-down Request Trigger Register. Writing a 1 to this location will t
+    # rigger a power-down request to the PMU.
+		#(OFFSET, MASK, VALUE)      (0XFFD80220, 0x0000003CU ,0x0000003CU)  */
+    mask_write 0XFFD80220 0x0000003C 0x0000003C
 }
 
 set psu_lpd_xppu_data {
@@ -15188,11 +15190,15 @@ set psu_serdes_init_data {
 
 		# Sel of lane 1 ref clock local mux. Set to 1 to select lane 1 slicer outp
     # ut. Set to 0 to select lane1 ref clock mux output.
-		# PSU_SERDES_L0_L1_REF_CLK_SEL_L1_REF_CLK_LCL_SEL                                 0x1
+		# PSU_SERDES_L0_L1_REF_CLK_SEL_L1_REF_CLK_LCL_SEL                                 0x0
+
+		# Bit 3 of lane 1 ref clock mux one hot sel. Set to 1 to select lane 3 sli
+    # cer output from ref clock network
+		# PSU_SERDES_L0_L1_REF_CLK_SEL_L1_REF_CLK_SEL_3                                   0x1
 
 		# Lane1 Ref Clock Selection Register
-		#(OFFSET, MASK, VALUE)      (0XFD402864, 0x00000080U ,0x00000080U)  */
-    mask_write 0XFD402864 0x00000080 0x00000080
+		#(OFFSET, MASK, VALUE)      (0XFD402864, 0x00000088U ,0x00000008U)  */
+    mask_write 0XFD402864 0x00000088 0x00000008
 		# Register : L0_L2_REF_CLK_SEL @ 0XFD402868</p>
 
 		# Sel of lane 2 ref clock local mux. Set to 1 to select lane 1 slicer outp

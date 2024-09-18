@@ -38,7 +38,7 @@ create: check
 	@
 	@# Create TMP directory to avoid issues with .. in the path name
 	@mkdir -p /tmp/petalinux-optee-${PLATFORM}
-	@petalinux-create -n $(PETAL_PATH) -t project --template zynqMP --tmpdir /tmp/petalinux-optee-${PLATFORM}
+	@petalinux-create -n $(PETAL_PATH) -t project --template zynqMP
 	@cp build/zynqmp/xsa/$(XSA_FILE)  $(PETAL_PATH)/
 	@cd ./petalinux && petalinux-config --get-hw-description=$(XSA_FILE)
 	@#
@@ -73,12 +73,14 @@ build: check
 	@petalinux-build -p $(PETAL_PATH)
 	
 package: check
-	@petalinux-package --boot --pmufw --u-boot --add ${PETAL_PATH}/images/linux/tee_raw.bin --cpu a53-0 \
-	    --file-attribute "load=0x60000000, startup=0x60000000, exception_level=el-1, trustzone" --force -p ${PETAL_PATH}
-	@cp $(PETAL_PATH)/images/linux/image.ub ./images/
-	@cp $(PETAL_PATH)/images/linux/boot.scr ./images/
-	@cp $(PETAL_PATH)/images/linux/BOOT.BIN ./images/
-	@cp $(PETAL_PATH)/images/linux/rootfs.tar.gz ./images/
+	@cd ./petalinux && petalinux-package --boot --pmufw --u-boot --add images/linux/tee_raw.bin --cpu a53-0 \
+	    --file-attribute "load=0x60000000, startup=0x60000000, exception_level=el-1, trustzone" --force
+	@mkdir -p ./build/images
+	@cd ./build/images && rm -rf *
+	@cp $(PETAL_PATH)/images/linux/image.ub ./build/images/
+	@cp $(PETAL_PATH)/images/linux/boot.scr ./build/images/
+	@cp $(PETAL_PATH)/images/linux/BOOT.BIN ./build/images/
+	@cp $(PETAL_PATH)/images/linux/rootfs.tar.gz ./build/images/
 
 sysroot:
 	@cd petalinux && petalinux-build --sdk
