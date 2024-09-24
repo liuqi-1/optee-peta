@@ -1,3 +1,4 @@
 .vscode
 **/.Xil
 /build/images/*
+/.idea

@@ -3,8 +3,8 @@ sudo rm -rf /media/liuqi/ROOT/*
 ls /media/liuqi/ROOT
 ls /media/liuqi/BOOT
 echo "finish clearing previous image"
-cp BOOT.bin /media/liuqi/BOOT
-cp boot.scr /media/liuqi/BOOT
-cp image.ub /media/liuqi/BOOT
-sudo tar -xvf rootfs.tar -C /media/liuqi/ROOT >/dev/null 2>&1
+cp images/BOOT.BIN /media/liuqi/BOOT/
+cp images/boot.scr /media/liuqi/BOOT/
+cp images/image.ub /media/liuqi/BOOT/
+sudo tar xvfp images/rootfs.tar.gz -C /media/liuqi/ROOT
 echo "finish installing new boot image"
