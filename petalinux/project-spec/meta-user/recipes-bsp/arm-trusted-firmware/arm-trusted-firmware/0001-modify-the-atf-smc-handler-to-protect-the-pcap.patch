@@ -1,0 +1,163 @@
+From 97d1265b311313761840ebc1a392e3b0bf4d51d0 Mon Sep 17 00:00:00 2001
+From: liuqi <liuqi@bupt.edu.cn>
+Date: Tue, 24 Sep 2024 01:06:33 -0700
+Subject: [PATCH] modify the atf smc handler to protect the pcap
+
+---
+ plat/xilinx/zynqmp/pm_service/pm_svc_main.c | 57 ++++++++++++++++++++-
+ 1 file changed, 56 insertions(+), 1 deletion(-)
+
+diff --git a/plat/xilinx/zynqmp/pm_service/pm_svc_main.c b/plat/xilinx/zynqmp/pm_service/pm_svc_main.c
+index e2ad95dc7..66ae6ecb1 100644
+--- a/plat/xilinx/zynqmp/pm_service/pm_svc_main.c
++++ b/plat/xilinx/zynqmp/pm_service/pm_svc_main.c
+@@ -53,7 +53,7 @@ static struct {
+ /**
+  * trigger_wdt_restart() - Trigger warm restart event to APU cores
+  *
+- * This function triggers SGI for all active APU CPUs. SGI handler then
++ * This function triggers SGI(software generate interrupt) for all active APU CPUs. SGI handler then
+  * power down CPU and call system reset.
+  */
+ static void trigger_wdt_restart(void)
+@@ -110,6 +110,9 @@ static uint64_t ttc_fiq_handler(uint32_t id, uint32_t flags, void *handle,
+ {
+ 	INFO("BL31: Got TTC FIQ\n");
+ 
++	INFO("ttc_fiq_handler\n")
++
++
+ 	plat_ic_end_of_interrupt(id);
+ 
+ 	/* Clear TTC interrupt by reading interrupt register */
+@@ -178,6 +181,8 @@ static int pm_wdt_restart_setup(void)
+ {
+ 	int ret;
+ 
++
++
+ 	/* register IRQ handler for SGI7 */
+ 	ret = request_intr_type_el3(ARM_IRQ_SEC_SGI_7, zynqmp_sgi7_irq);
+ 	if (ret) {
+@@ -265,6 +270,7 @@ uint64_t pm_smc_handler(uint32_t smc_fid, uint64_t x1, uint64_t x2, uint64_t x3,
+ 
+ 	uint32_t pm_arg[4];
+ 
++
+ 	/* Handle case where PM wasn't initialized properly */
+ 	if (!pm_up)
+ 		SMC_RET1(handle, SMC_UNK);
+@@ -405,11 +411,23 @@ uint64_t pm_smc_handler(uint32_t smc_fid, uint64_t x1, uint64_t x2, uint64_t x3,
+ 	}
+ 
+ 	case PM_FPGA_LOAD:
++
++		if(is_caller_non_secure(flags)){
++			WARN("BL31: PM_FPGA_LOAD smc call can not be called from non-secure world.\n");
++			SMC_RET1(handle, SMC_UNK);
++		}
++
+ 		ret = pm_fpga_load(pm_arg[0], pm_arg[1], pm_arg[2], pm_arg[3]);
+ 		SMC_RET1(handle, (uint64_t)ret);
+ 
+ 	case PM_FPGA_GET_STATUS:
+ 	{
++
++		if(is_caller_non_secure(flags)){
++			WARN("BL31:PM_FPGA_GET_STATUS smc call can not be called from non-secure world.\n");
++			SMC_RET1(handle, SMC_UNK);
++		}
++
+ 		uint32_t value;
+ 
+ 		ret = pm_fpga_get_status(&value);
+@@ -426,6 +444,12 @@ uint64_t pm_smc_handler(uint32_t smc_fid, uint64_t x1, uint64_t x2, uint64_t x3,
+ 	}
+ 
+ 	case PM_SECURE_RSA_AES:
++
++		if(is_caller_non_secure(flags)){
++			WARN("BL31: PM_SECURE_RSA_AES smc call can not be called from non-secure world.\n");
++			SMC_RET1(handle, SMC_UNK);
++		}
++
+ 		ret = pm_secure_rsaaes(pm_arg[0], pm_arg[1], pm_arg[2],
+ 				       pm_arg[3]);
+ 		SMC_RET1(handle, (uint64_t)ret);
+@@ -557,17 +581,28 @@ uint64_t pm_smc_handler(uint32_t smc_fid, uint64_t x1, uint64_t x2, uint64_t x3,
+ 		SMC_RET1(handle, (uint64_t)ret);
+ 
+ 	case PM_SECURE_SHA:
++
++		if(is_caller_non_secure(flags)){
++			WARN("BL31: PM_SECURE_SHA smc call can not be called from non-secure world.\n");
++			SMC_RET1(handle, SMC_UNK);
++		}
++
+ 		ret = pm_sha_hash(pm_arg[0], pm_arg[1], pm_arg[2],
+ 				pm_arg[3]);
+ 		SMC_RET1(handle, (uint64_t)ret);
+ 
+ 	case PM_SECURE_RSA:
++		if(is_caller_non_secure(flags)){
++			WARN("BL31: PM_SECURE_RSA smc call can not be called from non-secure world.\n");
++			SMC_RET1(handle, SMC_UNK);
++		}
+ 		ret = pm_rsa_core(pm_arg[0], pm_arg[1], pm_arg[2],
+ 				       pm_arg[3]);
+ 		SMC_RET1(handle, (uint64_t)ret);
+ 
+ 	case PM_SECURE_IMAGE:
+ 	{
++		
+ 		uint32_t result[2];
+ 
+ 		ret = pm_secure_image(pm_arg[0], pm_arg[1], pm_arg[2],
+@@ -578,6 +613,12 @@ uint64_t pm_smc_handler(uint32_t smc_fid, uint64_t x1, uint64_t x2, uint64_t x3,
+ 
+ 	case PM_FPGA_READ:
+ 	{
++
++		if(is_caller_non_secure(flags)){
++			WARN("BL31: PM_FPGA_READ smc call can not be called from non-secure world.\n");
++			SMC_RET1(handle, SMC_UNK);
++		}
++
+ 		uint32_t value;
+ 
+ 		ret = pm_fpga_read(pm_arg[0], pm_arg[1], pm_arg[2], pm_arg[3],
+@@ -587,6 +628,12 @@ uint64_t pm_smc_handler(uint32_t smc_fid, uint64_t x1, uint64_t x2, uint64_t x3,
+ 
+ 	case PM_SECURE_AES:
+ 	{
++
++		if(is_caller_non_secure(flags)){
++			WARN("BL31: PM_SECURE_AES smc call can not be called from non-secure world.\n");
++			SMC_RET1(handle, SMC_UNK);
++		}
++
+ 		uint32_t value;
+ 
+ 		ret = pm_aes_engine(pm_arg[0], pm_arg[1], &value);
+@@ -628,6 +675,12 @@ uint64_t pm_smc_handler(uint32_t smc_fid, uint64_t x1, uint64_t x2, uint64_t x3,
+ 
+ 	case PM_EFUSE_ACCESS:
+ 	{
++
++		if(is_caller_non_secure(flags)){
++			WARN("BL31: PM_EFUSE_ACCESS smc call can not be called from non-secure world.\n");
++			SMC_RET1(handle, SMC_UNK);
++		}
++
+ 		uint32_t value;
+ 
+ 		ret = pm_efuse_access(pm_arg[0], pm_arg[1], &value);
+@@ -661,6 +714,8 @@ uint64_t em_smc_handler(uint32_t smc_fid, uint64_t x1, uint64_t x2, uint64_t x3,
+ {
+ 	enum pm_ret_status ret;
+ 
++	INFO("em_smc_handler\n");
++
+ 	switch (smc_fid & FUNCID_NUM_MASK) {
+ 	/* EM API Functions */
+ 	case EM_SET_ACTION:
