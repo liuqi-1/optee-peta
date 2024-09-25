@@ -34,6 +34,10 @@ ifneq ($(PETALINUX_VER),2020.2)
 	$(error This makefile only support Petalinux 2020.2)
 endif
 
+################################################################
+# create petalinux project
+################################################################
+
 # create: check
 # 	@
 # 	@# Create TMP directory to avoid issues with .. in the path name
@@ -69,9 +73,18 @@ endif
 # 	@# Replace exisiting user configued dts file to add optee node
 # 	@cp build/zynqmp/device-tree/system-user.dtsi ${PETAL_PATH}/project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
 
+
+###########################################################
+# build the petalinux project
+###########################################################
+
 build: check
 	@petalinux-build -p $(PETAL_PATH)
-	
+
+###########################################################
+# make boot image
+###########################################################
+
 package: check
 	@cd ./petalinux && petalinux-package --boot --pmufw --u-boot --add images/linux/tee_raw.bin --cpu a53-0 \
 	    --file-attribute "load=0x60000000, startup=0x60000000, exception_level=el-1, trustzone" --force
@@ -82,10 +95,37 @@ package: check
 	@cp $(PETAL_PATH)/images/linux/BOOT.BIN ./build/images/
 	@cp $(PETAL_PATH)/images/linux/rootfs.tar.gz ./build/images/
 
+
+###########################################################
+# make and install the sysroot
+###########################################################
+
 sysroot:
 	@cd petalinux && petalinux-build --sdk
 	@cd petalinux && petalinux-package --sysroot
 	
+###########################################################
+# clear the petalinux project
+###########################################################
+
 clear:
 	@petalinux-build -x distclean -p ${PETAL_PATH}
 	# @petalinux-build -x mrproper -p ${PETAL_PATH} 
+
+###########################################################
+# download the cross-compile toolchain
+###########################################################
+
+toolchains:
+	@cd build && make -f toolchain.mk toolchains
+
+
+#############################################################################
+# make the source code of ca(client application) and ta(trusted application)
+#############################################################################
+
+src:
+	@cd src && make
+
+src-clean:
+	@cd src && make clean

@@ -2,3 +2,4 @@
 **/.Xil
 /build/images/*
 /.idea
+toolchains/
