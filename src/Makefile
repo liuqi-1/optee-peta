@@ -34,7 +34,7 @@ prepare-for-rootfs: examples
 	@mkdir -p $(OUTPUT_DIR)/ta
 	@mkdir -p $(OUTPUT_DIR)/ca
 	@for example in $(EXAMPLE_LIST); do \
-		if [ -e $$example/host/$$example ]; then \
+		if [ -e $$example/host/user-ta-$$example ]; then \
 			cp -p $$example/host/user-ta-$$example $(OUTPUT_DIR)/ca/; \
 		fi; \
 		cp -pr $$example/ta/*.ta $(OUTPUT_DIR)/ta/; \
