@@ -112,16 +112,6 @@ peta-clean:
 	@petalinux-build -x distclean -p ${PETAL_PATH}
 	# @petalinux-build -x mrproper -p ${PETAL_PATH} 
 
-#############################################################################
-# make the source code of ca(client application) and ta(trusted application)
-#############################################################################
-
-user-ta:
-	@cd src && make
-
-user-ta-clean:
-	@cd src && make clean
-
 
 ###############################################
 # toolchains
