@@ -1,46 +1,46 @@
-##############################################
-# all target
-##############################################
-all: optee-os optee-client toolchain-path
-clean: optee-os-clean optee-client-clean
+export V ?= 0
 
+OUTPUT_DIR := $(CURDIR)/out
+ROOT = $(shell pwd)/../
 
-###############################################
-# toolchains
-###############################################
-toolchain-path:
-	@cd .. && make toolchains
-	@export PATH=../toolchains/aarch64/bin:../toolchains/aarch32/bin:$PATH
+EXAMPLE_LIST := $(subst /,,$(dir $(wildcard */Makefile)))
 
+HOST_CROSS_COMPILE = aarch64-linux-gnu-
 
-##############################################
-# optee-os
-##############################################
+.PHONY: all
+all: examples prepare-for-rootfs
 
-optee-os: toolchain-path
-	@ cd ./optee_os &&  make \
-		CFG_ARM64_core=y \
-		CFG_TEE_BENCHMARK=n \
-		CFG_TEE_CORE_LOG_LEVEL=3 \
-		CROSS_COMPILE=aarch64-linux-gnu- \
-		CROSS_COMPILE_core=aarch64-linux-gnu- \
-		CROSS_COMPILE_ta_arm32=arm-linux-gnueabihf- \
-		CROSS_COMPILE_ta_arm64=aarch64-linux-gnu- \
-		DEBUG=1 \
-		O=out/arm \
-		PLATFORM=vexpress-qemu_armv8a
+.PHONY: clean
+clean: examples-clean prepare-for-rootfs-clean
 
-optee-os-clean:
-	@rm -rf ./optee_os/out
+examples:
+	@for example in $(EXAMPLE_LIST); do \
+		$(MAKE) -C $$example CROSS_COMPILE="$(HOST_CROSS_COMPILE)" \
+			TEEC_EXPORT="$(ROOT)/optee_client/out/export/usr" \
+			TA_DEV_KIT_DIR="$(ROOT)/optee_os/out/arm/export-ta_arm64" \
+			|| exit -1; \
+	done
 
-##############################################
-# optee-client
-##############################################
+examples-clean:
+	@for example in $(EXAMPLE_LIST); do \
+		$(MAKE) -C $$example clean \
+			TA_DEV_KIT_DIR="$(ROOT)/optee_os/out/arm/export-ta_arm64" \
+			|| exit -1; \
+	done
 
-optee-client: toolchain-path
-	@mkdir -p ./optee_client/out
-	@cd ./optee_client/out && cmake -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc ..
-	@cd ./optee_client/out && make
+prepare-for-rootfs: examples
+	@echo "Copying example CA and TA binaries to $(OUTPUT_DIR)..."
+	@mkdir -p $(OUTPUT_DIR)
+	@mkdir -p $(OUTPUT_DIR)/ta
+	@mkdir -p $(OUTPUT_DIR)/ca
+	@for example in $(EXAMPLE_LIST); do \
+		if [ -e $$example/host/$$example ]; then \
+			cp -p $$example/host/user-ta-$$example $(OUTPUT_DIR)/ca/; \
+		fi; \
+		cp -pr $$example/ta/*.ta $(OUTPUT_DIR)/ta/; \
+	done
 
-optee-client-clean:
-	@rm -rf ./optee_client/out
+prepare-for-rootfs-clean:
+	@rm -rf $(OUTPUT_DIR)/ta
+	@rm -rf $(OUTPUT_DIR)/ca
+	@rmdir --ignore-fail-on-non-empty $(OUTPUT_DIR) || test ! -e $(OUTPUT_DIR)

@@ -1,8 +1,8 @@
-[submodule "src/optee_os"]
-	path = src/optee_os
+[submodule "optee_os"]
+	path = optee_os
 	url = git@github.com:liuqi-1/optee_os.git
 	branch = 3.11.0
-[submodule "src/optee_client"]
-	path = src/optee_client
+[submodule "optee_client"]
+	path = optee_client
 	url = git@github.com:liuqi-1/optee_client.git
 	branch = 3.11.0

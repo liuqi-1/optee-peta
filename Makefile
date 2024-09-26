@@ -108,24 +108,55 @@ sysroot:
 # clear the petalinux project
 ###########################################################
 
-clear:
+peta-clean:
 	@petalinux-build -x distclean -p ${PETAL_PATH}
 	# @petalinux-build -x mrproper -p ${PETAL_PATH} 
-
-###########################################################
-# download the cross-compile toolchain
-###########################################################
-
-toolchains:
-	@cd build && make -f toolchain.mk toolchains
-
 
 #############################################################################
 # make the source code of ca(client application) and ta(trusted application)
 #############################################################################
 
-src:
+user-ta:
 	@cd src && make
 
-src-clean:
+user-ta-clean:
 	@cd src && make clean
+
+
+###############################################
+# toolchains
+###############################################
+toolchains:
+	@cd build && make -f toolchain.mk toolchains
+	@export PATH=../toolchains/aarch64/bin:../toolchains/aarch32/bin:$PATH
+
+
+##############################################
+# optee-os
+##############################################
+
+optee-os: toolchains
+	@ cd ./optee_os &&  make \
+		CFG_ARM64_core=y \
+		CFG_TEE_BENCHMARK=n \
+		CFG_TEE_CORE_LOG_LEVEL=3 \
+		CROSS_COMPILE=aarch64-linux-gnu- \
+		CROSS_COMPILE_core=aarch64-linux-gnu- \
+		CROSS_COMPILE_ta_arm32=arm-linux-gnueabihf- \
+		CROSS_COMPILE_ta_arm64=aarch64-linux-gnu- \
+		DEBUG=1 \
+		O=out/arm \
+		PLATFORM=vexpress-qemu_armv8a
+
+optee-os-clean:
+	@rm -rf ./optee_os/out
+
+##############################################
+# optee-client
+##############################################
+
+optee-client: toolchains
+	@cd optee_client && make CROSS_COMPILE=aarch64-linux-gnu-
+
+optee-client-clean:
+	@rm -rf ./optee_client/out
