@@ -20,6 +20,7 @@ B = "${WORKDIR}/build"
 EXTRA_OEMAKE += " \
     PLATFORM=${OPTEEMACHINE} \
     CFG_${OPTEE_CORE}_core=y \
+    CFG_WITH_USER_TA=y \
     CROSS_COMPILE_core=${HOST_PREFIX} \
     CROSS_COMPILE_ta_${OPTEE_ARCH}=${HOST_PREFIX} \
     NOWERROR=1 \

@@ -34,6 +34,10 @@ ifneq ($(PETALINUX_VER),2020.2)
 	$(error This makefile only support Petalinux 2020.2)
 endif
 
+################################################################
+# create petalinux project
+################################################################
+
 # create: check
 # 	@
 # 	@# Create TMP directory to avoid issues with .. in the path name
@@ -69,9 +73,18 @@ endif
 # 	@# Replace exisiting user configued dts file to add optee node
 # 	@cp build/zynqmp/device-tree/system-user.dtsi ${PETAL_PATH}/project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
 
+
+###########################################################
+# build the petalinux project
+###########################################################
+
 build: check
 	@petalinux-build -p $(PETAL_PATH)
-	
+
+###########################################################
+# make boot image
+###########################################################
+
 package: check
 	@cd ./petalinux && petalinux-package --boot --pmufw --u-boot --add images/linux/tee_raw.bin --cpu a53-0 \
 	    --file-attribute "load=0x60000000, startup=0x60000000, exception_level=el-1, trustzone" --force
@@ -82,10 +95,58 @@ package: check
 	@cp $(PETAL_PATH)/images/linux/BOOT.BIN ./build/images/
 	@cp $(PETAL_PATH)/images/linux/rootfs.tar.gz ./build/images/
 
+
+###########################################################
+# make and install the sysroot
+###########################################################
+
 sysroot:
 	@cd petalinux && petalinux-build --sdk
 	@cd petalinux && petalinux-package --sysroot
 	
-clear:
+###########################################################
+# clear the petalinux project
+###########################################################
+
+peta-clean:
 	@petalinux-build -x distclean -p ${PETAL_PATH}
 	# @petalinux-build -x mrproper -p ${PETAL_PATH} 
+
+
+###############################################
+# toolchains
+###############################################
+toolchains:
+	@cd build && make -f toolchain.mk toolchains
+	@export PATH=../toolchains/aarch64/bin:../toolchains/aarch32/bin:$PATH
+
+
+##############################################
+# optee-os
+##############################################
+
+optee-os: toolchains
+	@ cd ./optee_os &&  make \
+		CFG_ARM64_core=y \
+		CFG_TEE_BENCHMARK=n \
+		CFG_TEE_CORE_LOG_LEVEL=3 \
+		CROSS_COMPILE=aarch64-linux-gnu- \
+		CROSS_COMPILE_core=aarch64-linux-gnu- \
+		CROSS_COMPILE_ta_arm32=arm-linux-gnueabihf- \
+		CROSS_COMPILE_ta_arm64=aarch64-linux-gnu- \
+		DEBUG=1 \
+		O=out/arm \
+		PLATFORM=vexpress-qemu_armv8a
+
+optee-os-clean:
+	@rm -rf ./optee_os/out
+
+##############################################
+# optee-client
+##############################################
+
+optee-client: toolchains
+	@cd optee_client && make CROSS_COMPILE=aarch64-linux-gnu-
+
+optee-client-clean:
+	@rm -rf ./optee_client/out
